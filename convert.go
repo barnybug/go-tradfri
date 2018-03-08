@@ -10,6 +10,15 @@ func KelvinToMired(k int) int {
 	return mired
 }
 
+func MiredToKelvin(mired int) int {
+	if mired < MiradsMin {
+		mired = MiradsMin
+	} else if mired > MiradsMax {
+		mired = MiradsMax
+	}
+	return 1000000 / mired
+}
+
 func PercentageToDim(p int) int {
 	dim := p * DimMax / 100
 	if dim < DimMin {

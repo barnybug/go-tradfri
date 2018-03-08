@@ -3,6 +3,7 @@ package tradfri
 // Derived from https://github.com/eclipse/smarthome/blob/4204ce06bb28c28e5f711e720f87ef83beff2e27/extensions/binding/org.eclipse.smarthome.binding.tradfri/src/main/java/org/eclipse/smarthome/binding/tradfri/TradfriBindingConstants.java
 
 const Remote = 0
+const Remote2 = 1
 const Lamp = 2
 const DimMax = 254
 const DimMin = 0

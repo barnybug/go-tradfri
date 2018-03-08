@@ -31,14 +31,14 @@ type DeviceDescription struct {
 		AvailablePowerSources int    `json:"6"`
 		BatteryLevel          int    `json:"9"`
 	} `json:"3"`
-	LightControl       []LightControl `json:"3311"`
-	ApplicationType    int            `json:"5750"`
-	DeviceName         string         `json:"9001"`
-	CreatedAt          int            `json:"9002"`
-	DeviceID           int            `json:"9003"`
-	Reachability_state int            `json:"9019"`
-	LastSeen           int            `json:"9020"`
-	OTAUpdateState     int            `json:"9054"`
+	LightControl      []LightControl `json:"3311"`
+	ApplicationType   int            `json:"5750"`
+	DeviceName        string         `json:"9001"`
+	CreatedAt         int            `json:"9002"`
+	DeviceID          int            `json:"9003"`
+	ReachabilityState int            `json:"9019"`
+	LastSeen          int            `json:"9020"`
+	OTAUpdateState    int            `json:"9054"`
 }
 
 var PowerSources = map[int]string{
@@ -61,10 +61,14 @@ func (d *DeviceDescription) AvailablePowerSource() string {
 
 func (d *DeviceDescription) String() string {
 	s := fmt.Sprintf("ID: %d Name: %q\nType: %d Model: %q\n", d.DeviceID, d.DeviceName, d.ApplicationType, d.Device.ModelNumber)
-	s += fmt.Sprintf("Power: %s\n", d.AvailablePowerSource())
-	if d.ApplicationType == Remote {
-		s += fmt.Sprintf("Battery Level: %v\n", d.Device.BatteryLevel)
+	s += fmt.Sprintf("Firmware: %s Manufacturer: %q\n", d.Device.FirmwareVersion, d.Device.Manufacturer)
+	s += fmt.Sprintf("Power: %s", d.AvailablePowerSource())
+	if d.ApplicationType == Remote || d.ApplicationType == Remote2 {
+		s += fmt.Sprintf(" Level: %v%%", d.Device.BatteryLevel)
 	}
+	s += "\n"
+	lastSeen := time.Unix(int64(d.LastSeen), 0)
+	s += fmt.Sprintf("Last seen: %s\n", lastSeen.Format(time.RFC1123))
 	if d.ApplicationType == Lamp {
 		for count, entry := range d.LightControl {
 			power := "off"
@@ -74,8 +78,8 @@ func (d *DeviceDescription) String() string {
 			dim := *entry.Dim * 100 / 254
 			s += fmt.Sprintf("Light Control Set %d, Power: %s, Dim: %d%%\n",
 				count, power, dim)
-			s += fmt.Sprintf("Color Temperature: x %d y %d, Color: %s (if 0, lamp does not support these)\n",
-				*entry.ColorX, *entry.ColorY, *entry.Color)
+			s += fmt.Sprintf("Color Temperature: %dK, Color: %s\n",
+				MiredToKelvin(*entry.Mireds), *entry.Color)
 		}
 	}
 	return s
