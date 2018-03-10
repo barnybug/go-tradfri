@@ -75,9 +75,9 @@ func (d *DeviceDescription) String() string {
 			if *entry.Power != 0 {
 				power = "on"
 			}
-			dim := *entry.Dim * 100 / 254
+			pc := DimToPercentage(*entry.Dim)
 			s += fmt.Sprintf("Light Control Set %d, Power: %s, Dim: %d%%\n",
-				count, power, dim)
+				count, power, pc)
 			s += fmt.Sprintf("Color Temperature: %dK, Color: %s\n",
 				MiredToKelvin(*entry.Mireds), *entry.Color)
 		}
