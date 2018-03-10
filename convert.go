@@ -2,19 +2,19 @@ package tradfri
 
 func KelvinToMired(k int) int {
 	mired := round(1000000 / float64(k))
-	if mired < MiradsMin {
-		mired = MiradsMin
-	} else if mired > MiradsMax {
-		mired = MiradsMax
+	if mired < MiredMin {
+		mired = MiredMin
+	} else if mired > MiredMax {
+		mired = MiredMax
 	}
 	return mired
 }
 
 func MiredToKelvin(mired int) int {
-	if mired < MiradsMin {
-		mired = MiradsMin
-	} else if mired > MiradsMax {
-		mired = MiradsMax
+	if mired < MiredMin {
+		mired = MiredMin
+	} else if mired > MiredMax {
+		mired = MiredMax
 	}
 	return round(1000000 / float64(mired))
 }
