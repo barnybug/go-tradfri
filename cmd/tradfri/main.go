@@ -215,8 +215,8 @@ func watchCommand(c *cli.Context) error {
 		client.Observe(id)
 	}
 
-	for msg := range client.Events {
-		fmt.Println(msg)
+	for msg := range client.Events() {
+		fmt.Printf("%s\n", msg)
 	}
 	return nil
 }

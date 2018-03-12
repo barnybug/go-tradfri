@@ -9,7 +9,6 @@ import (
 	"os/user"
 	"path"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/barnybug/go-tradfri/log"
@@ -21,10 +20,8 @@ type Client struct {
 	Key     string
 	Ident   string
 	PSK     string
-	Events  chan canopus.ObserveMessage
 
 	connection canopus.Connection
-	observing  sync.Once
 }
 
 func SetDebug(debug bool) {
@@ -34,7 +31,6 @@ func SetDebug(debug bool) {
 func NewClient(gateway string) *Client {
 	return &Client{
 		Gateway: gateway,
-		Events:  make(chan canopus.ObserveMessage),
 	}
 }
 
@@ -270,13 +266,29 @@ func (c *Client) SetGroup(groupId int, change LightControl) error {
 	return c.putRequest(uri, payload)
 }
 
+func (c *Client) observer(in chan canopus.ObserveMessage, out chan *DeviceDescription) {
+	for msg := range in {
+		value := msg.GetValue()
+		if value, ok := value.(canopus.MessagePayload); ok {
+			dd := &DeviceDescription{}
+			err := json.Unmarshal(value.GetBytes(), dd)
+			if err == nil {
+				out <- dd
+			}
+		}
+	}
+}
+
+func (c *Client) Events() <-chan *DeviceDescription {
+	out := make(chan *DeviceDescription, 16)
+	in := make(chan canopus.ObserveMessage, 16)
+	go c.connection.Observe(in)
+	go c.observer(in, out)
+	return out
+}
+
 func (c *Client) Observe(deviceId int) error {
 	uri := fmt.Sprintf("%s/%d", uriDevices, deviceId)
 	_, err := c.connection.ObserveResource(uri)
-	if err == nil {
-		c.observing.Do(func() {
-			go c.connection.Observe(c.Events)
-		})
-	}
 	return err
 }
