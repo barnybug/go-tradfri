@@ -54,12 +54,8 @@ func main() {
 			Action: setCommand,
 			Flags: []cli.Flag{
 				cli.IntFlag{
-					Name:  "device",
-					Usage: "device id",
-				},
-				cli.IntFlag{
-					Name:  "group",
-					Usage: "group id",
+					Name:  "id",
+					Usage: "device or group id",
 				},
 				cli.BoolFlag{
 					Name:  "off",
@@ -173,18 +169,18 @@ func setCommand(c *cli.Context) error {
 		change.Duration = &d
 	}
 
-	if c.Int("device") != 0 {
+	if c.Int("id") != 0 {
 		client, err := connect(c)
 		checkErr(err)
-		err = client.SetDevice(c.Int("device"), change)
-		checkErr(err)
-	} else if c.Int("group") != 0 {
-		client, err := connect(c)
-		checkErr(err)
-		err = client.SetGroup(c.Int("group"), change)
+		id := c.Int("id")
+		if id&(1<<17) == 0 {
+			err = client.SetDevice(id, change)
+		} else {
+			err = client.SetGroup(id, change)
+		}
 		checkErr(err)
 	} else {
-		return errors.New("required arguments: --device or --group")
+		return errors.New("required arguments: --id")
 	}
 	return nil
 }
