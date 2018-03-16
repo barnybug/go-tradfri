@@ -25,3 +25,8 @@ Search for devices:
 Switch a bulb on 50% brightness:
 
 	$ tradfri --gateway 192.168.10.123 set --device 65536 --level 50
+
+## Credits
+
+- https://github.com/oliof/tradfri_go
+- https://github.com/ggravlingen/pytradfri
