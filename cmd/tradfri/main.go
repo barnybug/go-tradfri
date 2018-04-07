@@ -63,7 +63,7 @@ func main() {
 				},
 				cli.IntFlag{
 					Name:  "level",
-					Usage: "dim level (0-254)",
+					Usage: "dim level (0-100)",
 				},
 				cli.IntFlag{
 					Name:  "temp",
@@ -75,7 +75,7 @@ func main() {
 				},
 				cli.IntFlag{
 					Name:  "duration",
-					Usage: "transition duration",
+					Usage: "transition duration (ms)",
 				},
 			},
 		},
