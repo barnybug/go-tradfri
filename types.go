@@ -14,6 +14,8 @@ import (
 
 type LightControl struct {
 	Color    *string `json:"5706,omitempty"`
+	ColorHue *int    `json:"5707,omitempty"`
+	ColorSat *int    `json:"5708,omitempty"`
 	ColorX   *int    `json:"5709,omitempty"`
 	ColorY   *int    `json:"5710,omitempty"`
 	Power    *int    `json:"5850,omitempty"`
@@ -78,8 +80,20 @@ func (d *DeviceDescription) String() string {
 			pc := DimToPercentage(*entry.Dim)
 			s += fmt.Sprintf("Light Control Set %d, Power: %s, Dim: %d%%\n",
 				count, power, pc)
-			s += fmt.Sprintf("Color Temperature: %dK, Color: %s\n",
-				MiredToKelvin(*entry.Mireds), *entry.Color)
+			s += "Color: "
+			if entry.Mireds != nil {
+				s += fmt.Sprintf("%dK ", MiredToKelvin(*entry.Mireds))
+			}
+			if entry.Color != nil {
+				s += fmt.Sprintf("#%s ", *entry.Color)
+			}
+			if entry.ColorX != nil {
+				s += fmt.Sprintf("X:%d/Y:%d ", *entry.ColorX, *entry.ColorY)
+			}
+			if entry.ColorHue != nil {
+				s += fmt.Sprintf("Hue: %d Sat: %d ", *entry.ColorHue, *entry.ColorSat)
+			}
+			s += "\n"
 		}
 	}
 	return s
