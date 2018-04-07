@@ -147,41 +147,37 @@ func setCommand(c *cli.Context) error {
 	if c.BoolT("off") {
 		power = 0
 	}
-	level := c.Int("level")
-	temp := c.Int("temp")
-	color := c.String("color")
-	duration := c.Int("duration")
 	change := tradfri.LightControl{}
 	change.Power = &power
-	if level > 0 {
-		dim := tradfri.PercentageToDim(level)
+	if c.IsSet("level") {
+		dim := tradfri.PercentageToDim(c.Int("level"))
 		change.Dim = &dim
 	}
-	if color != "" {
+	if c.IsSet("color") {
+		color := c.String("color")
 		change.Color = &color
 	}
-	if temp > 0 {
-		mired := tradfri.KelvinToMired(temp)
+	if c.IsSet("temp") {
+		mired := tradfri.KelvinToMired(c.Int("temp"))
 		change.Mireds = &mired
 	}
-	if duration > 0 {
-		d := tradfri.MsToDuration(duration)
+	if c.IsSet("duration") {
+		d := tradfri.MsToDuration(c.Int("duration"))
 		change.Duration = &d
 	}
 
-	if c.Int("id") != 0 {
-		client, err := connect(c)
-		checkErr(err)
-		id := c.Int("id")
-		if id&(1<<17) == 0 {
-			err = client.SetDevice(id, change)
-		} else {
-			err = client.SetGroup(id, change)
-		}
-		checkErr(err)
-	} else {
+	if !c.IsSet("id") {
 		return errors.New("required arguments: --id")
 	}
+	client, err := connect(c)
+	checkErr(err)
+	id := c.Int("id")
+	if id&(1<<17) == 0 {
+		err = client.SetDevice(id, change)
+	} else {
+		err = client.SetGroup(id, change)
+	}
+	checkErr(err)
 	return nil
 }
 
