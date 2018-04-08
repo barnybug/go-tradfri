@@ -37,7 +37,9 @@ func NewClient(gateway string) *Client {
 func (c *Client) Connect() error {
 	if c.PSK == "" {
 		err := c.generatePSK()
-		return err
+		if err != nil {
+			return err
+		}
 	}
 
 	address := fmt.Sprintf("%s:%d", c.Gateway, tradfriPort)
@@ -114,8 +116,8 @@ func (c *Client) generatePSK() error {
 		if err != nil {
 			return err
 		}
-		log.Printf("PSK: %s\n", c.PSK)
 		c.PSK = pskResp.PSK
+		log.Printf("PSK: %s\n", c.PSK)
 		return nil
 	} else {
 		return errors.New("Unable to get PSK")

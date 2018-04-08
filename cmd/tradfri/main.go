@@ -122,7 +122,7 @@ func connect(c *cli.Context) (*tradfri.Client, error) {
 		}
 	}
 	err = client.Connect()
-	if err != nil {
+	if err == nil {
 		client.SavePSK()
 	}
 	return client, err
