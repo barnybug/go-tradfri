@@ -42,6 +42,12 @@ func main() {
 			Name:   "devices",
 			Usage:  "scan for devices",
 			Action: devicesCommand,
+			Flags: []cli.Flag{
+				cli.IntFlag{
+					Name:  "id",
+					Usage: "device id",
+				},
+			},
 		},
 		{
 			Name:   "groups",
@@ -72,6 +78,22 @@ func main() {
 				cli.StringFlag{
 					Name:  "color",
 					Usage: "hex string (6 chars)",
+				},
+				cli.IntFlag{
+					Name:  "colorX",
+					Usage: "color X value",
+				},
+				cli.IntFlag{
+					Name:  "colorY",
+					Usage: "color Y value",
+				},
+				cli.IntFlag{
+					Name:  "hue",
+					Usage: "color hue",
+				},
+				cli.IntFlag{
+					Name:  "sat",
+					Usage: "color saturation",
 				},
 				cli.IntFlag{
 					Name:  "duration",
@@ -132,12 +154,19 @@ func devicesCommand(c *cli.Context) error {
 	client, err := connect(c)
 	checkErr(err)
 
+	if c.IsSet("id") {
+		device, err := client.GetDeviceDescription(c.Int("id"))
+		checkErr(err)
+		fmt.Println(device)
+		return nil
+	}
+
 	devices, err := client.ListDevices()
 	checkErr(err)
 
 	fmt.Printf("Found %d devices\n\n", len(devices))
 	for _, device := range devices {
-		fmt.Printf("%s\n", device)
+		fmt.Println(device)
 	}
 	return nil
 }
@@ -156,6 +185,22 @@ func setCommand(c *cli.Context) error {
 	if c.IsSet("color") {
 		color := c.String("color")
 		change.Color = &color
+	}
+	if c.IsSet("colorX") {
+		colorX := c.Int("colorX")
+		change.ColorX = &colorX
+	}
+	if c.IsSet("colorY") {
+		colorY := c.Int("colorY")
+		change.ColorY = &colorY
+	}
+	if c.IsSet("hue") {
+		hue := c.Int("hue")
+		change.ColorHue = &hue
+	}
+	if c.IsSet("sat") {
+		sat := c.Int("sat")
+		change.ColorSat = &sat
 	}
 	if c.IsSet("temp") {
 		mired := tradfri.KelvinToMired(c.Int("temp"))
