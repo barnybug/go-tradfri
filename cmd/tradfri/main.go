@@ -178,13 +178,19 @@ func setCommand(c *cli.Context) error {
 	}
 	change := tradfri.LightControl{}
 	change.Power = &power
+	if c.IsSet("color") {
+		color := c.String("color")
+		x, y, dim, err := tradfri.RGBToColorXYDim(color)
+		if err != nil {
+			return err
+		}
+		change.ColorX = &x
+		change.ColorY = &y
+		change.Dim = &dim
+	}
 	if c.IsSet("level") {
 		dim := tradfri.PercentageToDim(c.Int("level"))
 		change.Dim = &dim
-	}
-	if c.IsSet("color") {
-		color := c.String("color")
-		change.Color = &color
 	}
 	if c.IsSet("colorX") {
 		colorX := c.Int("colorX")
