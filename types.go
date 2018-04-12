@@ -99,6 +99,18 @@ func (d *DeviceDescription) String() string {
 	return s
 }
 
+func (d *DeviceDescription) SupportsMired() bool {
+	return d.LightControl[0].Mireds != nil
+}
+
+func (d *DeviceDescription) SupportsColorXY() bool {
+	return d.LightControl[0].ColorX != nil
+}
+
+func (d *DeviceDescription) SupportsHueSat() bool {
+	return d.LightControl[0].ColorHue != nil
+}
+
 type DeviceSet struct {
 	LightControl []LightControl `json:"3311"`
 }

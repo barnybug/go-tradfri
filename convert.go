@@ -135,3 +135,7 @@ func KelvinToRGB(k int) (r, g, b float64) {
 	}
 	return
 }
+
+func KelvinToColorXYDim(k int) (x int, y int, dim int) {
+	return RGBToColorXYDim(KelvinToRGB(k))
+}
