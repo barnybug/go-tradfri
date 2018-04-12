@@ -49,6 +49,8 @@ func DimToPercentage(dim int) int {
 	p := round(float64(dim) * 100 / DimMax)
 	if p > 100 {
 		p = 100
+	} else if p < 0 {
+		p = 0
 	}
 	return p
 }
@@ -67,7 +69,7 @@ func norm(v float64) float64 {
 }
 
 // Convert sRGB D65 -> xy colour space
-func RGBToColorXYDim(rgb string) (x int, y int, dim int, err error) {
+func HexRGBToColorXYDim(rgb string) (x int, y int, dim int, err error) {
 	if len(rgb) != 6 {
 		err = errors.New("Incorrect length color hex string")
 		return
@@ -77,10 +79,15 @@ func RGBToColorXYDim(rgb string) (x int, y int, dim int, err error) {
 	if err != nil {
 		return
 	}
+	x, y, dim = RGBToColorXYDim(float64(s[0])/255, float64(s[1])/255, float64(s[2])/255)
+	return
+}
+
+func RGBToColorXYDim(r, g, b float64) (x int, y int, dim int) {
 	// Gamma correct sRGB -> sRGB'
-	r := norm(float64(s[0]) / 255)
-	g := norm(float64(s[1]) / 255)
-	b := norm(float64(s[2]) / 255)
+	r = norm(r)
+	g = norm(g)
+	b = norm(b)
 	// Wide RGB D65 conversion formula
 	X := r*0.664511 + g*0.154324 + b*0.162028
 	Y := r*0.313881 + g*0.668433 + b*0.047685
@@ -92,5 +99,39 @@ func RGBToColorXYDim(rgb string) (x int, y int, dim int, err error) {
 		Y = 1
 	}
 	dim = int(Y * 255)
+	return
+}
+
+func bound(f float64) float64 {
+	if f <= 0 {
+		return 0
+	} else if f >= 1 {
+		return 1
+	} else {
+		return f
+	}
+}
+
+func KelvinToRGB(k int) (r, g, b float64) {
+	if k < 1000 {
+		k = 1000
+	} else if k > 40000 {
+		k = 40000
+	}
+	t := float64(k / 100)
+	if t <= 66 {
+		r = 1
+		g = bound((99.4708025861*math.Log(t) - 161.1195681661) / 255)
+	} else {
+		r = bound((329.698727446 * math.Pow(t-60, -0.1332047592)) / 255)
+		g = bound((288.1221695283 * math.Pow(t-60, -0.0755148492)) / 255)
+	}
+	if t >= 66 {
+		b = 1
+	} else if t <= 19 {
+		b = 0
+	} else {
+		b = bound((138.5177312231*math.Log(t-10) - 305.0447927307) / 255)
+	}
 	return
 }
