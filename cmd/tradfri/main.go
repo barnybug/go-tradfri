@@ -75,6 +75,10 @@ func main() {
 					Name:  "temp",
 					Usage: "colour temperature (2200-4000K)",
 				},
+				cli.BoolFlag{
+					Name:  "tempascolor",
+					Usage: "set colour temperature on a color bulb",
+				},
 				cli.StringFlag{
 					Name:  "color",
 					Usage: "hex string (6 chars)",
@@ -180,7 +184,7 @@ func setCommand(c *cli.Context) error {
 	change.Power = &power
 	if c.IsSet("color") {
 		color := c.String("color")
-		x, y, dim, err := tradfri.RGBToColorXYDim(color)
+		x, y, dim, err := tradfri.HexRGBToColorXYDim(color)
 		if err != nil {
 			return err
 		}
@@ -209,8 +213,15 @@ func setCommand(c *cli.Context) error {
 		change.ColorSat = &sat
 	}
 	if c.IsSet("temp") {
-		mired := tradfri.KelvinToMired(c.Int("temp"))
-		change.Mireds = &mired
+		if c.Bool("tempascolor") {
+			x, y, dim := tradfri.RGBToColorXYDim(tradfri.KelvinToRGB(c.Int("temp")))
+			change.ColorX = &x
+			change.ColorY = &y
+			change.Dim = &dim
+		} else {
+			mired := tradfri.KelvinToMired(c.Int("temp"))
+			change.Mireds = &mired
+		}
 	}
 	if c.IsSet("duration") {
 		d := tradfri.MsToDuration(c.Int("duration"))

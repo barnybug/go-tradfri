@@ -7,37 +7,41 @@ import (
 )
 
 func TestKelvinToMired(t *testing.T) {
-	assert.Equal(t, 454, KelvinToMired(2100))
-	assert.Equal(t, 454, KelvinToMired(2200))
-	assert.Equal(t, 345, KelvinToMired(2900))
-	assert.Equal(t, 250, KelvinToMired(4000))
-	assert.Equal(t, 250, KelvinToMired(5000))
+	assert := assert.New(t)
+	assert.Equal(454, KelvinToMired(2100))
+	assert.Equal(454, KelvinToMired(2200))
+	assert.Equal(345, KelvinToMired(2900))
+	assert.Equal(250, KelvinToMired(4000))
+	assert.Equal(250, KelvinToMired(5000))
 }
 
 func TestMiredToKelvin(t *testing.T) {
-	assert.Equal(t, 2203, MiredToKelvin(500))
-	assert.Equal(t, 2203, MiredToKelvin(454))
-	assert.Equal(t, 2899, MiredToKelvin(345))
-	assert.Equal(t, 4000, MiredToKelvin(250))
-	assert.Equal(t, 4000, MiredToKelvin(220))
+	assert := assert.New(t)
+	assert.Equal(2203, MiredToKelvin(500))
+	assert.Equal(2203, MiredToKelvin(454))
+	assert.Equal(2899, MiredToKelvin(345))
+	assert.Equal(4000, MiredToKelvin(250))
+	assert.Equal(4000, MiredToKelvin(220))
 }
 
 func TestPercentageToDim(t *testing.T) {
-	assert.Equal(t, 254, PercentageToDim(110))
-	assert.Equal(t, 254, PercentageToDim(100))
-	assert.Equal(t, 251, PercentageToDim(99))
-	assert.Equal(t, 3, PercentageToDim(1))
-	assert.Equal(t, 0, PercentageToDim(0))
-	assert.Equal(t, 0, PercentageToDim(-10))
+	assert := assert.New(t)
+	assert.Equal(254, PercentageToDim(110))
+	assert.Equal(254, PercentageToDim(100))
+	assert.Equal(251, PercentageToDim(99))
+	assert.Equal(3, PercentageToDim(1))
+	assert.Equal(0, PercentageToDim(0))
+	assert.Equal(0, PercentageToDim(-10))
 }
 
 func TestDimToPercentage(t *testing.T) {
-	assert.Equal(t, 100, DimToPercentage(265))
-	assert.Equal(t, 100, DimToPercentage(254))
-	assert.Equal(t, 99, DimToPercentage(251))
-	assert.Equal(t, 1, DimToPercentage(3))
-	assert.Equal(t, 0, DimToPercentage(0))
-	assert.Equal(t, 0, DimToPercentage(-10))
+	assert := assert.New(t)
+	assert.Equal(100, DimToPercentage(265))
+	assert.Equal(100, DimToPercentage(254))
+	assert.Equal(99, DimToPercentage(251))
+	assert.Equal(1, DimToPercentage(3))
+	assert.Equal(0, DimToPercentage(0))
+	assert.Equal(0, DimToPercentage(-10))
 }
 
 func TestMsToDuration(t *testing.T) {
@@ -55,22 +59,34 @@ var hexRGBToColorXYDimTable = []struct {
 }
 
 func TestHexRGBToColorXYDim(t *testing.T) {
+	assert := assert.New(t)
 	var x, y, dim int
 	var err error
 
 	for _, row := range hexRGBToColorXYDimTable {
 		x, y, dim, err = HexRGBToColorXYDim(row.rgb)
-		assert.Equal(t, row.x, x)
-		assert.Equal(t, row.y, y)
-		assert.Equal(t, row.dim, dim)
-		assert.NoError(t, err)
+		assert.Equal(row.x, x)
+		assert.Equal(row.y, y)
+		assert.Equal(row.dim, dim)
+		assert.NoError(err)
 	}
 }
 
 func TestKelvinToRGB(t *testing.T) {
+	assert := assert.New(t)
 	// pure white
 	r, g, b := KelvinToRGB(6600)
-	assert.Equal(t, 1., r)
-	assert.Equal(t, 1., g)
-	assert.Equal(t, 1., b)
+	assert.Equal(1., r)
+	assert.Equal(1., g)
+	assert.Equal(1., b)
+	// blueish
+	r, g, b = KelvinToRGB(7000)
+	assert.InDelta(.95, r, .01)
+	assert.InDelta(.95, g, .01)
+	assert.InDelta(1., b, .01)
+	// redish
+	r, g, b = KelvinToRGB(2000)
+	assert.InDelta(1., r, .01)
+	assert.InDelta(.53, g, .01)
+	assert.InDelta(.05, b, .01)
 }
