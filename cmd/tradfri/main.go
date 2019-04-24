@@ -115,11 +115,11 @@ func main() {
 			Usage:  "reboot gateway",
 			Action: rebootCommand,
 		},
-		{
-			Name:   "watch",
-			Usage:  "watch for events",
-			Action: watchCommand,
-		},
+		// {
+		// 	Name:   "watch",
+		// 	Usage:  "watch for events",
+		// 	Action: watchCommand,
+		// },
 		{
 			Name:   "factory_reset",
 			Usage:  "factory reset the gateway",
@@ -143,9 +143,8 @@ func connect(c *cli.Context) (*tradfri.Client, error) {
 	if err != nil {
 		if key == "" {
 			return nil, errors.New("--key required")
-		} else {
-			client.Key = key
 		}
+		client.Key = key
 	}
 	err = client.Connect()
 	if err == nil {
@@ -256,24 +255,24 @@ func groupsCommand(c *cli.Context) error {
 	return nil
 }
 
-func watchCommand(c *cli.Context) error {
-	client, err := connect(c)
-	checkErr(err)
+// func watchCommand(c *cli.Context) error {
+// 	client, err := connect(c)
+// 	checkErr(err)
 
-	fmt.Println("Listing devices...")
-	deviceIds, err := client.ListDeviceIds()
-	checkErr(err)
+// 	fmt.Println("Listing devices...")
+// 	deviceIds, err := client.ListDeviceIds()
+// 	checkErr(err)
 
-	fmt.Printf("Watching %d devices...\n", len(deviceIds))
-	for _, id := range deviceIds {
-		client.Observe(id)
-	}
+// 	fmt.Printf("Watching %d devices...\n", len(deviceIds))
+// 	for _, id := range deviceIds {
+// 		client.Observe(id)
+// 	}
 
-	for msg := range client.Events() {
-		fmt.Printf("%s\n", msg)
-	}
-	return nil
-}
+// 	for msg := range client.Events() {
+// 		fmt.Printf("%s\n", msg)
+// 	}
+// 	return nil
+// }
 
 func infoCommand(c *cli.Context) error {
 	client, err := connect(c)

@@ -8,11 +8,11 @@ import (
 	"os"
 	"os/user"
 	"path"
-	"strings"
 	"time"
 
 	"github.com/barnybug/go-tradfri/log"
-	"github.com/zubairhamed/canopus"
+	"github.com/dustin/go-coap"
+	uuid "github.com/satori/go.uuid"
 )
 
 type Client struct {
@@ -21,7 +21,7 @@ type Client struct {
 	Ident   string
 	PSK     string
 
-	connection canopus.Connection
+	client *DtlsClient
 }
 
 func SetDebug(debug bool) {
@@ -45,11 +45,8 @@ func (c *Client) Connect() error {
 	address := fmt.Sprintf("%s:%d", c.Gateway, tradfriPort)
 	log.Printf("Connecting to gateway: %s", address)
 	var err error
-	c.connection, err = canopus.DialDTLS(address, c.Ident, c.PSK)
-	if err != nil {
-		return err
-	}
-	return nil
+	c.client, err = NewDtlsClient(address, c.Ident, c.PSK)
+	return err
 }
 
 func pskPath() string {
@@ -82,93 +79,74 @@ func (c *Client) SavePSK() {
 	}
 }
 
-func uuid() string {
-	uuid, _ := ioutil.ReadFile("/proc/sys/kernel/random/uuid")
-	return strings.TrimSpace(string(uuid))
+func newUuid() string {
+	u1 := uuid.Must(uuid.NewV4())
+	return u1.String()
 }
 
 func (c *Client) generatePSK() error {
 	if c.Ident == "" {
-		c.Ident = uuid()
-		log.Printf("Generated ident: X%sX", c.Ident)
+		c.Ident = newUuid()
+		log.Printf("Generated ident: %s", c.Ident)
 	} else {
 		log.Printf("Using ident: %s", c.Ident)
 	}
 	log.Println("Requesting PSK...")
 	address := fmt.Sprintf("%s:%d", c.Gateway, tradfriPort)
-	conn, err := canopus.DialDTLS(address, preauthIdentity, c.Key)
-	if err != nil {
-		return err
-	}
 
-	payload := PSKRequest{Ident: c.Ident}
-	req := canopus.NewRequest(canopus.MessageConfirmable, canopus.Post)
-	req.SetRequestURI(uriIdent)
-	data := canopus.NewJSONPayload(payload).GetBytes()
-	req.SetPayload(data)
-	resp, err := conn.Send(req)
+	client, err := NewDtlsClient(address, "Client_identity", c.Key)
 	if err != nil {
 		return err
 	}
-	if resp.GetMessage().GetCode() == 65 {
+	payload := PSKRequest{Ident: c.Ident}
+	data, _ := json.Marshal(payload)
+	req := client.BuildPOSTMessage(uriIdent, string(data))
+	resp, err := client.Call(req)
+	if err != nil {
+		return err
+	}
+	if resp.Code == coap.Created {
 		var pskResp PSKResponse
-		err := json.Unmarshal(resp.GetMessage().GetPayload().GetBytes(), &pskResp)
+		err := json.Unmarshal(resp.Payload, &pskResp)
 		if err != nil {
 			return err
 		}
 		c.PSK = pskResp.PSK
 		log.Printf("PSK: %s\n", c.PSK)
 		return nil
-	} else {
-		return errors.New("Unable to get PSK")
 	}
+	return errors.New("Unable to get PSK")
 }
 
 func (c *Client) putRequest(uri string, payload interface{}) error {
-	req := canopus.NewRequest(canopus.MessageConfirmable, canopus.Put)
-	data := canopus.NewJSONPayload(payload).GetBytes()
-	req.SetPayload(data)
-	log.Printf("PUT %s payload %s", uri, string(data))
-	req.SetRequestURI(uri)
-	resp, err := c.connection.Send(req)
+	data, _ := json.Marshal(payload)
+	req := c.client.BuildPUTMessage(uri, string(data))
+	_, err := c.client.Call(req)
 	if err != nil {
 		log.Printf("<- error: %+v", err)
 		return err
 	}
-	rdata := resp.GetMessage().GetPayload().GetBytes()
-	log.Printf("<- %s", string(rdata))
 	return nil
 }
 
 func (c *Client) postRequest(uri string) error {
-	req := canopus.NewRequest(canopus.MessageConfirmable, canopus.Post)
-	req.SetStringPayload("")
-	log.Printf("POST %s", uri)
-	req.SetRequestURI(uri)
-	resp, err := c.connection.Send(req)
+	req := c.client.BuildPOSTMessage(uri, "")
+	_, err := c.client.Call(req)
 	if err != nil {
 		log.Printf("<- error: %+v", err)
 		return err
 	}
-	rdata := resp.GetMessage().GetPayload().GetBytes()
-	log.Printf("<- %s", string(rdata))
 	return nil
 }
 
 func (c *Client) getRequest(uri string, out interface{}) error {
-	req := canopus.NewRequest(canopus.MessageConfirmable, canopus.Get)
-	req.SetStringPayload("")
-	log.Printf("GET %s", uri)
-	req.SetRequestURI(uri)
-	resp, err := c.connection.Send(req)
+	req := c.client.BuildGETMessage(uri)
+	resp, err := c.client.Call(req)
 	if err != nil {
 		log.Printf("<- error: %+v", err)
 		return err
 	}
-	data := resp.GetMessage().GetPayload().GetBytes()
-	log.Printf("<- %s", string(data))
-
-	err = json.Unmarshal(data, out)
+	err = json.Unmarshal(resp.Payload, out)
 	return err
 }
 
@@ -268,29 +246,29 @@ func (c *Client) SetGroup(groupId int, change LightControl) error {
 	return c.putRequest(uri, payload)
 }
 
-func (c *Client) observer(in chan canopus.ObserveMessage, out chan *DeviceDescription) {
-	for msg := range in {
-		value := msg.GetValue()
-		if value, ok := value.(canopus.MessagePayload); ok {
-			dd := &DeviceDescription{}
-			err := json.Unmarshal(value.GetBytes(), dd)
-			if err == nil {
-				out <- dd
-			}
-		}
-	}
-}
+// func (c *Client) observer(in chan canopus.ObserveMessage, out chan *DeviceDescription) {
+// 	for msg := range in {
+// 		value := msg.GetValue()
+// 		if value, ok := value.(canopus.MessagePayload); ok {
+// 			dd := &DeviceDescription{}
+// 			err := json.Unmarshal(value.GetBytes(), dd)
+// 			if err == nil {
+// 				out <- dd
+// 			}
+// 		}
+// 	}
+// }
 
-func (c *Client) Events() <-chan *DeviceDescription {
-	out := make(chan *DeviceDescription, 16)
-	in := make(chan canopus.ObserveMessage, 16)
-	go c.connection.Observe(in)
-	go c.observer(in, out)
-	return out
-}
+// func (c *Client) Events() <-chan *DeviceDescription {
+// 	out := make(chan *DeviceDescription, 16)
+// 	in := make(chan canopus.ObserveMessage, 16)
+// 	go c.connection.Observe(in)
+// 	go c.observer(in, out)
+// 	return out
+// }
 
-func (c *Client) Observe(deviceId int) error {
-	uri := fmt.Sprintf("%s/%d", uriDevices, deviceId)
-	_, err := c.connection.ObserveResource(uri)
-	return err
-}
+// func (c *Client) Observe(deviceId int) error {
+// 	uri := fmt.Sprintf("%s/%d", uriDevices, deviceId)
+// 	_, err := c.connection.ObserveResource(uri)
+// 	return err
+// }
