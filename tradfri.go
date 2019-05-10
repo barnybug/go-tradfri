@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"math/rand"
 	"os"
 	"os/user"
 	"path"
@@ -12,7 +13,6 @@ import (
 
 	"github.com/barnybug/go-tradfri/log"
 	"github.com/dustin/go-coap"
-	uuid "github.com/satori/go.uuid"
 )
 
 type Client struct {
@@ -79,14 +79,19 @@ func (c *Client) SavePSK() {
 	}
 }
 
-func newUuid() string {
-	u1 := uuid.Must(uuid.NewV4())
-	return u1.String()
+const letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+
+func randStringBytes(n int) string {
+	b := make([]byte, n)
+	for i := range b {
+		b[i] = letters[rand.Intn(len(letters))]
+	}
+	return string(b)
 }
 
 func (c *Client) generatePSK() error {
 	if c.Ident == "" {
-		c.Ident = newUuid()
+		c.Ident = randStringBytes(8)
 		log.Printf("Generated ident: %s", c.Ident)
 	} else {
 		log.Printf("Using ident: %s", c.Ident)
